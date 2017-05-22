@@ -7,18 +7,14 @@ class OtomotoSpider(scrapy.Spider):
                   'search[filter_enum_authorized_dealer]=1&'
                   'search[private_business]=business&'
                   'search[dist]=50']
+    dealers = set()
 
     def parse(self, response):
         offer_item = '.offer-item'
-        dealers = set()
         for item in response.css(offer_item):
-
-            # offer-item__link-seller
-            # item.css('li.next a::attr(href)').extract_first()
-            # dealer_selector = 'h2 a ::text'
             dealer_selector = 'div.offer-item__photo  a.offer-item__link-seller::attr(href)'
-            dealers.add(item.css(dealer_selector).extract_first())
-        return {'dealers': dealers}
-            # yield {
-            #     'name': item.css(dealer_selector).extract_first(),
-            # }
+            self.dealers.add(item.css(dealer_selector).extract_first())
+        yield {'dealers': self.dealers}
+        next_page = response.css('li.next a::attr(href)').extract_first()
+        if next_page is not None:
+            yield response.follow(next_page, self.parse)
